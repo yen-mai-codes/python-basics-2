@@ -12,6 +12,7 @@ from project_util import translate_html
 from mtTkinter import *
 from datetime import datetime
 import pytz
+import re
 
 
 # -----------------------------------------------------------------------
@@ -57,7 +58,28 @@ def process(url):
 
 # Problem 1
 
-# TODO: NewsStory
+class NewsStory:
+    def __init__(self, guid, title, description, link, pubdate):
+        self.guid = guid
+        self.title = title
+        self.description = description
+        self.link = link
+        self.pubdate = pubdate
+
+    def get_guid(self):
+        return self.guid
+    
+    def get_title(self):
+        return self.title
+    
+    def get_description(self):
+        return self.description
+    
+    def get_link(self):
+        return self.link
+    
+    def get_pubdate(self):
+        return self.pubdate
 
 
 # ======================
@@ -78,13 +100,102 @@ class Trigger(object):
 # PHRASE TRIGGERS
 
 # Problem 2
-# TODO: PhraseTrigger
+
+# puncts: for splitting text when contains punctuation and space. 
+# the delimiters are the punctuation characters and space.
+puncts = '[!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~\s+]'
+
+class PhraseTrigger(Trigger):
+    """
+    Subclass of Trigger.
+    PhraseTrigger should not be case-sensitive.
+    Input: assumed to be valid string (no punctuation, no extra spaces)
+    """
+    def __init__(self, phrase):
+        self.phrase = phrase.lower()
+
+    def is_phrase_in(self, text):
+        """
+        Returns True if the phrase is in the input text. False otherwise.
+        Notes: 
+        * words in phrase must maintain order of appearance in text,
+        and must be right next to each other
+        * not case-sensitive
+        * ignore punctuations
+        """
+        phrase_arr = self.phrase.split()
+
+        # removes punctuations from text. creates array of just words.
+        # for example: 
+        # * 'purple@#$%cow' -> ['purple', '', '', '', '', 'cow']
+        # * 'Purple!!! Cow!!!' -> ['Purple', '', '', 'Cow', '', '', '']
+        
+        text_arr = re.split(puncts, text)
+        
+        # if found_prev, then the very next word in the text 
+        # must be the next word in the phrase
+        found_prev = False
+
+        for word_phrase in phrase_arr:
+            for i in range(len(text_arr)):
+                # lowercase the current word in text_arr
+                word_text = text_arr[i].lower()
+
+                # if word_text is an empty string (aka a removed punctuation) skip it
+                if word_text == '':
+                    continue
+
+                if found_prev:
+                    if word_phrase == word_text:
+                        # mark start of new text array, as words in 
+                        # word phrases must maintain order of appearance
+                        # in text_arr
+                        text_arr = text_arr[i+1:] 
+                        break
+                    else:
+                        # if found the prev word in the phrase but
+                        # the current word_phrase and current 
+                        # word_text doesn't match, return false
+                        # (bad order)
+                        return False
+                
+                # if haven't found any words yet (this only happens once)
+                else:
+                    if word_phrase == word_text:
+                        found_prev = True
+                        text_arr = text_arr[i+1:]
+                        break
+            # immediately return False if cannot find word_phrase in text_arr
+            if i == len(text_arr) - 1 and word_text != word_phrase: 
+                return False
+        
+        # return True if found all word phrases in text_arr, with each having 
+        # correct order of appearance
+        return True
 
 # Problem 3
-# TODO: TitleTrigger
+class TitleTrigger(PhraseTrigger):
+    def __init__(self, phrase):
+        super().__init__(phrase)
+    
+    def evaluate(self, story):
+        title = story.get_title()
+        if super().is_phrase_in(title):
+            return True
+        else:
+            return False
 
 # Problem 4
-# TODO: DescriptionTrigger
+class DescriptionTrigger(PhraseTrigger):
+    def __init__(self, phrase):
+        super().__init__(phrase)
+    
+    def evaluate(self, story):
+        description = story.get_description()
+        if super().is_phrase_in(description):
+            return True
+        else:
+            return False
 
 # TIME TRIGGERS
 
@@ -93,6 +204,8 @@ class Trigger(object):
 # Constructor:
 #        Input: Time has to be in EST and in the format of "%d %b %Y %H:%M:%S".
 #        Convert time from string to a datetime before saving it as an attribute.
+
+
 
 # Problem 6
 # TODO: BeforeTrigger and AfterTrigger
@@ -221,8 +334,28 @@ def main_thread(master):
 
 
 if __name__ == "__main__":
-    root = Tk()
-    root.title("Some RSS parser")
-    t = threading.Thread(target=main_thread, args=(root,))
-    t.start()
-    root.mainloop()
+    # root = Tk()
+    # root.title("Some RSS parser")
+    # t = threading.Thread(target=main_thread, args=(root,))
+    # t.start()
+    # root.mainloop()
+
+    cuddly = NewsStory("", "The purple cow is soft and cuddly.", "", "", datetime.now())
+    # exclaim = NewsStory("", "Purple!!! Cow!!!", "", "", datetime.now())
+    # symbols = NewsStory("", "purple@#$%cow", "", "", datetime.now())
+    spaces = NewsStory("", "Did you see a purple     cow?", "", "", datetime.now())
+    # caps = NewsStory("", "The farmer owns a really PURPLE cow.", "", "", datetime.now())
+    # exact = NewsStory("", "purple cow", "", "", datetime.now())
+
+    # plural = NewsStory("", "Purple cows are cool!", "", "", datetime.now())
+    separate = NewsStory("", "The purple blob over there is a cow.", "", "", datetime.now())
+    # brown = NewsStory("", "How now brown cow.", "", "", datetime.now())
+    # badorder = NewsStory("", "Cow!!! Purple!!!", "", "", datetime.now())
+    nospaces = NewsStory("", "purplecowpurplecowpurplecow", "", "", datetime.now())
+    nothing = NewsStory("", "I like poison dart frogs.", "", "", datetime.now())
+
+    s1 = TitleTrigger("PURPLE COW")
+    s2 = TitleTrigger("purple cow")
+
+    for trig in [s1, s2]:
+        print(trig.evaluate(cuddly))
