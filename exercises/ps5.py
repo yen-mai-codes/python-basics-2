@@ -1,7 +1,7 @@
 """
-Name:
-Collaborators:
-Time:
+Name: Yen
+Collaborators: None
+Time: ~3 hours
 """
 
 import feedparser
@@ -208,7 +208,6 @@ class TimeTrigger(Trigger):
         self.time = self.time.replace(tzinfo=pytz.timezone("EST"))
 
 # Problem 6
-# TODO: BeforeTrigger and AfterTrigger
 
 class BeforeTrigger(TimeTrigger):
     def __init__(self, time):
@@ -252,14 +251,30 @@ class AfterTrigger(TimeTrigger):
 # COMPOSITE TRIGGERS
 
 # Problem 7
-# TODO: NotTrigger
+class NotTrigger(Trigger):
+    def __init__(self, trig):
+        self.trig = trig
+    
+    def evaluate(self, story):
+        return not self.trig.evaluate(story)
 
 # Problem 8
-# TODO: AndTrigger
+class AndTrigger(Trigger):
+    def __init__(self, trig1, trig2):
+        self.trig1 = trig1
+        self.trig2 = trig2
+    
+    def evaluate(self, story):
+        return self.trig1.evaluate(story) and self.trig2.evaluate(story)
 
 # Problem 9
-# TODO: OrTrigger
-
+class OrTrigger(Trigger):
+    def __init__(self, trig1, trig2):
+        self.trig1 = trig1
+        self.trig2 = trig2
+    
+    def evaluate(self, story):
+        return self.trig1.evaluate(story) or self.trig2.evaluate(story)
 
 # ======================
 # Filtering
@@ -273,10 +288,14 @@ def filter_stories(stories, triggerlist):
 
     Returns: a list of only the stories for which a trigger in triggerlist fires.
     """
-    # TODO: Problem 10
-    # This is a placeholder
-    # (we're just returning all the stories, with no filtering)
-    return stories
+    filtered_stories = []
+
+    for story in stories:
+        for trigger in triggerlist:
+            if trigger(story):
+                filtered_stories.add(story)
+    
+    return filter_stories
 
 
 # ======================
@@ -372,14 +391,8 @@ def main_thread(master):
 
 
 if __name__ == "__main__":
-    # root = Tk()
-    # root.title("Some RSS parser")
-    # t = threading.Thread(target=main_thread, args=(root,))
-    # t.start()
-    # root.mainloop()
-    ancient = NewsStory("", "", "", "", datetime(1987, 10, 15))
-
-    s1 = BeforeTrigger("12 Oct 2016 23:59:59")
-    s2 = AfterTrigger("12 Oct 2016 23:59:59")
-
-    s1.evaluate(ancient)
+    root = Tk()
+    root.title("Some RSS parser")
+    t = threading.Thread(target=main_thread, args=(root,))
+    t.start()
+    root.mainloop()
