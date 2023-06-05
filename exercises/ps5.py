@@ -200,15 +200,53 @@ class DescriptionTrigger(PhraseTrigger):
 # TIME TRIGGERS
 
 # Problem 5
-# TODO: TimeTrigger
-# Constructor:
-#        Input: Time has to be in EST and in the format of "%d %b %Y %H:%M:%S".
-#        Convert time from string to a datetime before saving it as an attribute.
 
-
+class TimeTrigger(Trigger):
+    def __init__(self, time) -> None:
+        # convert time string to datetime object with EST timezone
+        self.time = datetime.strptime(time, "%d %b %Y %H:%M:%S")
+        self.time = self.time.replace(tzinfo=pytz.timezone("EST"))
 
 # Problem 6
 # TODO: BeforeTrigger and AfterTrigger
+
+class BeforeTrigger(TimeTrigger):
+    def __init__(self, time):
+        super().__init__(time)
+    
+    def evaluate(self, story):
+        # gets the story's time
+        story_time = story.get_pubdate()
+
+        # if the story's time doesnt have timezone info, assume EST
+        if not story_time.tzinfo:
+            story_time = story_time.replace(tzinfo=pytz.timezone("EST"))
+
+        # if story time is strictly less than the current time
+        # return True. Else return False
+        if story_time < self.time:
+            return True
+        else:
+            return False
+        
+class AfterTrigger(TimeTrigger):
+    def __init__(self, time):
+        super().__init__(time)
+    
+    def evaluate(self, story):
+        # gets the story's time
+        story_time = story.get_pubdate()
+
+        # if the story's time doesnt have timezone info, assume EST
+        if not story_time.tzinfo:
+            story_time = story_time.replace(tzinfo=pytz.timezone("EST"))
+        
+        # if story time is strictly greater than the current time
+        # return True. Else return False
+        if story_time > self.time:
+            return True
+        else:
+            return False
 
 
 # COMPOSITE TRIGGERS
@@ -339,23 +377,9 @@ if __name__ == "__main__":
     # t = threading.Thread(target=main_thread, args=(root,))
     # t.start()
     # root.mainloop()
+    ancient = NewsStory("", "", "", "", datetime(1987, 10, 15))
 
-    cuddly = NewsStory("", "The purple cow is soft and cuddly.", "", "", datetime.now())
-    # exclaim = NewsStory("", "Purple!!! Cow!!!", "", "", datetime.now())
-    # symbols = NewsStory("", "purple@#$%cow", "", "", datetime.now())
-    spaces = NewsStory("", "Did you see a purple     cow?", "", "", datetime.now())
-    # caps = NewsStory("", "The farmer owns a really PURPLE cow.", "", "", datetime.now())
-    # exact = NewsStory("", "purple cow", "", "", datetime.now())
+    s1 = BeforeTrigger("12 Oct 2016 23:59:59")
+    s2 = AfterTrigger("12 Oct 2016 23:59:59")
 
-    # plural = NewsStory("", "Purple cows are cool!", "", "", datetime.now())
-    separate = NewsStory("", "The purple blob over there is a cow.", "", "", datetime.now())
-    # brown = NewsStory("", "How now brown cow.", "", "", datetime.now())
-    # badorder = NewsStory("", "Cow!!! Purple!!!", "", "", datetime.now())
-    nospaces = NewsStory("", "purplecowpurplecowpurplecow", "", "", datetime.now())
-    nothing = NewsStory("", "I like poison dart frogs.", "", "", datetime.now())
-
-    s1 = TitleTrigger("PURPLE COW")
-    s2 = TitleTrigger("purple cow")
-
-    for trig in [s1, s2]:
-        print(trig.evaluate(cuddly))
+    s1.evaluate(ancient)
