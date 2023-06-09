@@ -2,8 +2,12 @@
 // should edit this file to contain triggers that will fire on current news
 // stories!
 
+t0,TITLE,NASA
+
+t00,TITLE,TRUMP
+
 // title trigger named t1
-t1,TITLE,election
+t1,OR,t0,t00
 
 // description trigger named t2
 t2,DESCRIPTION,Trump
